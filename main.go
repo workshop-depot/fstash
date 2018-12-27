@@ -27,6 +27,17 @@ func main() {
 			fmt.Println(err)
 			return
 		}
+	case "list":
+		l, err := listDepth(_appHome, 5)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		var items []interface{}
+		for _, v := range l {
+			items = append(items, v)
+		}
+		fmt.Println(items...)
 	}
 }
 
@@ -38,6 +49,8 @@ var (
 	popCommand   = kingpin.Command("pop", "pop stash and expand it into a directory")
 	popStashName = popCommand.Flag("stash-name", "name of this stash, lower case, only numbers, alphabet and - and _").Short('n').Required().String()
 	popDstDir    = popCommand.Flag("destination", "the directory that its content will be expanded to").Short('d').Default(".").String()
+
+	listCommand = kingpin.Command("list", "lists existing file stashes")
 )
 
 func init() {
