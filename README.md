@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/dc0d/fstash)](https://goreportcard.com/report/github.com/dc0d/fstash)
+
 # fstash
 stash a file or a tree of files for later reuse - a bit like `git stash`
 
