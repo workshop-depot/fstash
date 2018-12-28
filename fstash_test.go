@@ -251,24 +251,24 @@ dir2/dir3 [file1.txt file2.txt]
 `, sb.String())
 }
 
-func Test_pop_stash_not_exist(t *testing.T) {
+func Test_expand_stash_not_exist(t *testing.T) {
 	require := require.New(t)
 
 	stashName := "sample-stash"
 	fstashHome := homeDir1()
 	workingDirectory := homeDir4()
-	err := popStash(stashName, fstashHome, workingDirectory)
+	err := expandStash(stashName, fstashHome, workingDirectory)
 	require.Equal(errStashNotExist, err)
 }
 
-func Test_pop_stash(t *testing.T) {
+func Test_expand_stash(t *testing.T) {
 	require := require.New(t)
 
 	stashName := "sample-stash"
 	fstashHome := homeDir3()
 	workingDirectory := homeDir4()
 
-	err := popStash(stashName, fstashHome, workingDirectory)
+	err := expandStash(stashName, fstashHome, workingDirectory)
 	require.NoError(err)
 
 	tree, err := readTree(workingDirectory)

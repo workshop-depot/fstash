@@ -13,9 +13,9 @@ $ go test -v *.go
 
 # usage
 
-Currently only creating file stashes and expanding them using pop sub-command is implemented.
+Currently only creating file stashes and expanding them using expand sub-command is implemented.
 
-A directory tree can be used as a skeleton for a named stash. Also it can be expanded using the subcommand `pop` by providing the name of the stash.
+A directory tree can be used as a skeleton for a named stash. Also it can be expanded using the subcommand `expand` by providing the name of the stash.
 
 The help for the app:
 
@@ -32,9 +32,11 @@ Commands:
   create --stash-name=STASH-NAME [<flags>]
     creating stash based on the content of a directory
 
-  pop --stash-name=STASH-NAME [<flags>]
-    pop stash and expand it into a directory
+  expand --stash-name=STASH-NAME [<flags>]
+    expand stash and expand it into a directory
 
+  list
+    lists existing file stashes
 ```
 
 Also the help for subcommands are provided too. For subcommand `create`:
@@ -51,12 +53,12 @@ Flags:
 
 ```
 
-And for sumcommand `pop`:
+And for sumcommand `expand`:
 
 ```
-usage: fstash pop --stash-name=STASH-NAME [<flags>]
+usage: fstash expand --stash-name=STASH-NAME [<flags>]
 
-pop stash and expand it into a directory
+expand stash and expand it into a directory
 
 Flags:
   -h, --help                   Show context-sensitive help (also try --help-long and --help-man).

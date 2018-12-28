@@ -19,11 +19,11 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-	case "pop":
-		if *popDstDir == "." {
-			*popDstDir = _wd
+	case "expand":
+		if *expandDstDir == "." {
+			*expandDstDir = _wd
 		}
-		if err := popStash(*popStashName, _appHome, *popDstDir); err != nil {
+		if err := expandStash(*expandStashName, _appHome, *expandDstDir); err != nil {
 			fmt.Println(err)
 			return
 		}
@@ -46,9 +46,9 @@ var (
 	createStashName    = createCommand.Flag("stash-name", "name of this stash, lower case, only numbers, alphabet and - and _").Short('n').Required().String()
 	createStashContent = createCommand.Flag("stash-content", "the directory that its content will be used to create the stash").Short('c').Default(".").String()
 
-	popCommand   = kingpin.Command("pop", "pop stash and expand it into a directory")
-	popStashName = popCommand.Flag("stash-name", "name of this stash, lower case, only numbers, alphabet and - and _").Short('n').Required().String()
-	popDstDir    = popCommand.Flag("destination", "the directory that its content will be expanded to").Short('d').Default(".").String()
+	expandCommand   = kingpin.Command("expand", "expand stash and expand it into a directory")
+	expandStashName = expandCommand.Flag("stash-name", "name of this stash, lower case, only numbers, alphabet and - and _").Short('n').Required().String()
+	expandDstDir    = expandCommand.Flag("destination", "the directory that its content will be expanded to").Short('d').Default(".").String()
 
 	listCommand = kingpin.Command("list", "lists existing file stashes")
 )

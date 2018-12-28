@@ -119,7 +119,7 @@ func createStash(stashName, stashTree, fstashHome string) error {
 	return copyTree(tree, dst, stashTree)
 }
 
-func popStash(stashName, fstashHome, workingDirectory string) error {
+func expandStash(stashName, fstashHome, workingDirectory string) error {
 	stashName = polishStashName(stashName)
 	parts := []string{fstashHome}
 	parts = append(parts, hashParts(hash(stashName))...)
