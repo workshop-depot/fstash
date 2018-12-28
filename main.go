@@ -23,7 +23,11 @@ func main() {
 		if *expandDstDir == "." {
 			*expandDstDir = _wd
 		}
-		if err := expandStash(*expandStashName, _appHome, *expandDstDir); err != nil {
+		var templatesData map[string]string
+		if expandData != nil {
+			templatesData = *expandData
+		}
+		if err := expandStash(*expandStashName, _appHome, *expandDstDir, templatesData); err != nil {
 			fmt.Println(err)
 			return
 		}
@@ -49,6 +53,7 @@ var (
 	expandCommand   = kingpin.Command("expand", "expand stash and expand it into a directory")
 	expandStashName = expandCommand.Flag("stash-name", "name of this stash, lower case, only numbers, alphabet and - and _").Short('n').Required().String()
 	expandDstDir    = expandCommand.Flag("destination", "the directory that its content will be expanded to").Short('d').Default(".").String()
+	expandData      = expandCommand.Arg("data", "json data for template files").StringMap()
 
 	listCommand = kingpin.Command("list", "lists existing file stashes")
 )

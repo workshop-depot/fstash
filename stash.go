@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -9,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"text/template"
 )
 
 func readTree(dir string) (map[string][]string, error) {
@@ -119,7 +122,52 @@ func createStash(stashName, stashTree, fstashHome string) error {
 	return copyTree(tree, dst, stashTree)
 }
 
-func expandStash(stashName, fstashHome, workingDirectory string) error {
+func expandTree(tree map[string][]string, dstHome, srcHome string, templatesData map[string]string) error {
+	for path, files := range tree {
+		for _, f := range files {
+			srcDir := filepath.Join(srcHome, path)
+			dstDir := filepath.Join(dstHome, path)
+
+			if err := os.MkdirAll(dstDir, 0777); err != nil {
+				return err
+			}
+
+			src := filepath.Join(srcDir, f)
+			dst := filepath.Join(dstDir, f)
+
+			content, err := ioutil.ReadFile(src)
+			if err != nil {
+				return err
+			}
+
+			base := filepath.Base(src)
+			key := strings.Replace(base, filepath.Ext(base), "", -1)
+			raw := strings.TrimSpace(templatesData[key])
+			if raw != "" {
+				t, err := template.New(key).Parse(string(content))
+				if err != nil {
+					return err
+				}
+				data := make(map[string]interface{})
+				if err := json.Unmarshal([]byte(raw), &data); err != nil {
+					return err
+				}
+				b := &bytes.Buffer{}
+				if err := t.Execute(b, data); err != nil {
+					return err
+				}
+				content = b.Bytes()
+			}
+
+			if err := ioutil.WriteFile(dst, content, 0777); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func expandStash(stashName, fstashHome, workingDirectory string, templatesData map[string]string) error {
 	stashName = polishStashName(stashName)
 	parts := []string{fstashHome}
 	parts = append(parts, hashParts(hash(stashName))...)
@@ -143,7 +191,11 @@ func expandStash(stashName, fstashHome, workingDirectory string) error {
 		return err
 	}
 
-	return copyTree(tree, workingDirectory, stashDir)
+	if len(templatesData) == 0 {
+		return copyTree(tree, workingDirectory, stashDir)
+	}
+
+	return expandTree(tree, workingDirectory, stashDir, templatesData)
 }
 
 func listDepth(dir string, depth int) ([]string, error) {

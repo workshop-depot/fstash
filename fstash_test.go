@@ -296,7 +296,7 @@ func Test_expand_stash_not_exist(t *testing.T) {
 	stashName := "sample-stash"
 	fstashHome := homeDir1
 	workingDirectory := homeDir4
-	err := expandStash(stashName, fstashHome, workingDirectory)
+	err := expandStash(stashName, fstashHome, workingDirectory, nil)
 	require.Equal(errStashNotExist, err)
 }
 
@@ -330,7 +330,7 @@ func Test_expand_stash(t *testing.T) {
 	fstashHome := homeDir3
 	workingDirectory := homeDir4
 
-	err := expandStash(stashName, fstashHome, workingDirectory)
+	err := expandStash(stashName, fstashHome, workingDirectory, nil)
 	require.NoError(err)
 
 	tree, err := readTree(workingDirectory)
@@ -385,4 +385,110 @@ func Test_listDepth(t *testing.T) {
 	require.Len(l, 3)
 	require.Equal("[sample-stash-1 sample-stash-2 sample-stash-3]",
 		fmt.Sprint(l))
+}
+
+const (
+	staticContent   = "some static content"
+	templateContent = "Author of {{ .AppName }} is {{ .Author }}."
+)
+
+func createSampleTreeWithTemplates(home string) error {
+	if err := os.MkdirAll(home, 0777); err != nil {
+		return err
+	}
+
+	d0f1 := filepath.Join(home, "file1.txt")
+	d0f2 := filepath.Join(home, "file2.txt")
+
+	dir1 := filepath.Join(home, "dir1")
+	d1f3 := filepath.Join(dir1, "file3.txt")
+	d1f4 := filepath.Join(dir1, "file4.txt")
+
+	if err := os.MkdirAll(dir1, 0777); err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(d0f1, []byte(staticContent), 0777); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(d0f2, []byte(templateContent), 0777); err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(d1f3, []byte(staticContent), 0777); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(d1f4, []byte(templateContent), 0777); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Test_expand_stash_templates(t *testing.T) {
+	require := require.New(t)
+	homeDir3 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir3))
+	}()
+	homeDir4 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir4))
+	}()
+	homeDir1 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir1))
+	}()
+
+	// creating sample stash
+	{
+		require.Nil(createSampleTreeWithTemplates(homeDir1))
+
+		stashTree := homeDir1
+		fstashHome := homeDir3
+		stashName := "sample-stash"
+		err := createStash(stashName, stashTree, fstashHome)
+		require.NoError(err)
+	}
+
+	// expand stash
+	{
+		stashName := "sample-stash"
+		fstashHome := homeDir3
+		workingDirectory := homeDir4
+
+		data := map[string]string{
+			"file2": `{"AppName":"fstash","Author":"dc0d"}`,
+			"file4": `{"AppName":"Web","Author":"Web Developer"}`,
+		}
+		err := expandStash(stashName, fstashHome, workingDirectory, data)
+		require.NoError(err)
+	}
+
+	// check content
+	{
+		workingDirectory := homeDir4
+		d0f1 := filepath.Join(workingDirectory, "file1.txt")
+		d0f2 := filepath.Join(workingDirectory, "file2.txt")
+
+		dir1 := filepath.Join(workingDirectory, "dir1")
+		d1f3 := filepath.Join(dir1, "file3.txt")
+		d1f4 := filepath.Join(dir1, "file4.txt")
+
+		content, err := ioutil.ReadFile(d0f1)
+		require.NoError(err)
+		require.Equal(staticContent, string(content))
+
+		content, err = ioutil.ReadFile(d0f2)
+		require.NoError(err)
+		require.Equal("Author of fstash is dc0d.", string(content))
+
+		content, err = ioutil.ReadFile(d1f3)
+		require.NoError(err)
+		require.Equal(staticContent, string(content))
+
+		content, err = ioutil.ReadFile(d1f4)
+		require.NoError(err)
+		require.Equal("Author of Web is Web Developer.", string(content))
+	}
 }
