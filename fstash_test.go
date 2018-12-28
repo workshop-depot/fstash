@@ -1,36 +1,26 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMain(m *testing.M) {
-	if err := createSampleTree(); err != nil {
-		panic(err)
-	}
-	exitCode := m.Run()
-
-	dirs := []string{homeDir1(), homeDir2(), homeDir3(), homeDir4()}
-	for _, v := range dirs {
-		if err := os.RemoveAll(v); err != nil {
-			panic(err)
-		}
-	}
-
-	os.Exit(exitCode)
+	rand.Seed(time.Now().UnixNano())
+	os.Exit(m.Run())
 }
 
-func createSampleTree() error {
-	home := homeDir1()
+func createSampleTree(home string) error {
 	d0f1 := filepath.Join(home, "file1.txt")
 	d0f2 := filepath.Join(home, "file2.txt")
 
@@ -69,26 +59,6 @@ func createSampleTree() error {
 	return nil
 }
 
-func homeDir1() string {
-	tmp := os.TempDir()
-	return filepath.Join(tmp, "fstash-test-dir-1")
-}
-
-func homeDir2() string {
-	tmp := os.TempDir()
-	return filepath.Join(tmp, "fstash-test-dir-2")
-}
-
-func homeDir3() string {
-	tmp := os.TempDir()
-	return filepath.Join(tmp, "fstash-test-dir-3")
-}
-
-func homeDir4() string {
-	tmp := os.TempDir()
-	return filepath.Join(tmp, "fstash-test-dir-4")
-}
-
 func makeOutput(tree map[string][]string) (*strings.Builder, error) {
 	sb := new(strings.Builder)
 	var keys []string
@@ -105,21 +75,42 @@ func makeOutput(tree map[string][]string) (*strings.Builder, error) {
 	return sb, nil
 }
 
+func randTemp() string {
+	const (
+		testDirPrefix = "fstash-test-dir-"
+	)
+
+	randBytes := make([]byte, 16)
+	rand.Read(randBytes)
+	return filepath.Join(os.TempDir(), testDirPrefix+hex.EncodeToString(randBytes))
+}
+
 func Test_createSampleTree(t *testing.T) {
-	assert := assert.New(t)
-	assert.Nil(createSampleTree())
+	require := require.New(t)
+	homeDir := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir))
+	}()
+
+	require.Nil(createSampleTree(homeDir))
 }
 
 func Test_readTree(t *testing.T) {
-	assert := assert.New(t)
+	require := require.New(t)
+	homeDir := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir))
+	}()
 
-	tree, err := readTree(homeDir1())
-	assert.NoError(err)
+	require.Nil(createSampleTree(homeDir))
+
+	tree, err := readTree(homeDir)
+	require.NoError(err)
 
 	sb, err := makeOutput(tree)
-	assert.NoError(err)
+	require.NoError(err)
 
-	assert.Equal(`. [file1.txt file2.txt]
+	require.Equal(`. [file1.txt file2.txt]
 dir1 [file1.txt file2.txt]
 dir2 [file1.txt file2.txt]
 dir2/dir3 [file1.txt file2.txt]
@@ -127,21 +118,31 @@ dir2/dir3 [file1.txt file2.txt]
 }
 
 func Test_copyTree(t *testing.T) {
-	assert := assert.New(t)
+	require := require.New(t)
+	homeDir1 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir1))
+	}()
+	homeDir2 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir2))
+	}()
 
-	tree, err := readTree(homeDir1())
-	assert.NoError(err)
+	require.Nil(createSampleTree(homeDir1))
 
-	err = copyTree(tree, homeDir2(), homeDir1())
-	assert.NoError(err)
+	tree, err := readTree(homeDir1)
+	require.NoError(err)
 
-	tree, err = readTree(homeDir2())
-	assert.NoError(err)
+	err = copyTree(tree, homeDir2, homeDir1)
+	require.NoError(err)
+
+	tree, err = readTree(homeDir2)
+	require.NoError(err)
 
 	sb, err := makeOutput(tree)
-	assert.NoError(err)
+	require.NoError(err)
 
-	assert.Equal(`. [file1.txt file2.txt]
+	require.Equal(`. [file1.txt file2.txt]
 dir1 [file1.txt file2.txt]
 dir2 [file1.txt file2.txt]
 dir2/dir3 [file1.txt file2.txt]
@@ -149,25 +150,35 @@ dir2/dir3 [file1.txt file2.txt]
 }
 
 func Test_copyTree_check_content(t *testing.T) {
-	assert := assert.New(t)
+	require := require.New(t)
+	homeDir1 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir1))
+	}()
+	homeDir2 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir2))
+	}()
 
-	tree, err := readTree(homeDir1())
-	assert.NoError(err)
+	require.Nil(createSampleTree(homeDir1))
 
-	err = copyTree(tree, homeDir2(), homeDir1())
-	assert.NoError(err)
+	tree, err := readTree(homeDir1)
+	require.NoError(err)
 
-	tree, err = readTree(homeDir2())
-	assert.NoError(err)
+	err = copyTree(tree, homeDir2, homeDir1)
+	require.NoError(err)
+
+	tree, err = readTree(homeDir2)
+	require.NoError(err)
 
 	content := strings.Repeat("a", 100)
 	for path, files := range tree {
 		for _, f := range files {
-			dir := filepath.Join(homeDir2(), path)
+			dir := filepath.Join(homeDir2, path)
 			fp := filepath.Join(dir, f)
 			c, err := ioutil.ReadFile(fp)
-			assert.NoError(err)
-			assert.Equal(content, string(c))
+			require.NoError(err)
+			require.Equal(content, string(c))
 		}
 	}
 }
@@ -217,9 +228,19 @@ func Test_validate_stash_name(t *testing.T) {
 
 func Test_stash_directory_create_new_stash_validate_stash_name(t *testing.T) {
 	require := require.New(t)
+	homeDir1 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir1))
+	}()
+	homeDir3 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir3))
+	}()
 
-	stashTree := homeDir1()
-	fstashHome := homeDir3()
+	require.Nil(createSampleTree(homeDir1))
+
+	stashTree := homeDir1
+	fstashHome := homeDir3
 	stashName := "sample-stash" + "::"
 	err := createStash(stashName, stashTree, fstashHome)
 	require.Equal(errInvalidStashName, err)
@@ -227,9 +248,19 @@ func Test_stash_directory_create_new_stash_validate_stash_name(t *testing.T) {
 
 func Test_stash_directory_create_new_stash(t *testing.T) {
 	require := require.New(t)
+	homeDir1 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir1))
+	}()
+	homeDir3 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir3))
+	}()
 
-	stashTree := homeDir1()
-	fstashHome := homeDir3()
+	require.Nil(createSampleTree(homeDir1))
+
+	stashTree := homeDir1
+	fstashHome := homeDir3
 	stashName := "sample-stash"
 	err := createStash(stashName, stashTree, fstashHome)
 	require.NoError(err)
@@ -253,20 +284,51 @@ dir2/dir3 [file1.txt file2.txt]
 
 func Test_expand_stash_not_exist(t *testing.T) {
 	require := require.New(t)
+	homeDir1 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir1))
+	}()
+	homeDir4 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir4))
+	}()
 
 	stashName := "sample-stash"
-	fstashHome := homeDir1()
-	workingDirectory := homeDir4()
+	fstashHome := homeDir1
+	workingDirectory := homeDir4
 	err := expandStash(stashName, fstashHome, workingDirectory)
 	require.Equal(errStashNotExist, err)
 }
 
 func Test_expand_stash(t *testing.T) {
 	require := require.New(t)
+	homeDir3 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir3))
+	}()
+	homeDir4 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir4))
+	}()
+	homeDir1 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir1))
+	}()
+
+	require.Nil(createSampleTree(homeDir1))
+
+	// creating sample stash
+	{
+		stashTree := homeDir1
+		fstashHome := homeDir3
+		stashName := "sample-stash"
+		err := createStash(stashName, stashTree, fstashHome)
+		require.NoError(err)
+	}
 
 	stashName := "sample-stash"
-	fstashHome := homeDir3()
-	workingDirectory := homeDir4()
+	fstashHome := homeDir3
+	workingDirectory := homeDir4
 
 	err := expandStash(stashName, fstashHome, workingDirectory)
 	require.NoError(err)
@@ -286,9 +348,19 @@ dir2/dir3 [file1.txt file2.txt]
 
 func Test_listDepth(t *testing.T) {
 	require := require.New(t)
+	homeDir3 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir3))
+	}()
+	homeDir1 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir1))
+	}()
 
-	stashTree := homeDir1()
-	fstashHome := homeDir3()
+	require.Nil(createSampleTree(homeDir1))
+
+	stashTree := homeDir1
+	fstashHome := homeDir3
 
 	{
 		stashName := "sample-stash-1"
@@ -310,7 +382,7 @@ func Test_listDepth(t *testing.T) {
 
 	l, err := listDepth(fstashHome, 5)
 	require.NoError(err)
-	require.Len(l, 4)
-	require.Equal("[sample-stash sample-stash-1 sample-stash-2 sample-stash-3]",
+	require.Len(l, 3)
+	require.Equal("[sample-stash-1 sample-stash-2 sample-stash-3]",
 		fmt.Sprint(l))
 }
