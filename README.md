@@ -11,57 +11,53 @@ Use this command:
 $ go test -v *.go
 ```
 
-# usage
+# usage story
 
-Currently only creating file stashes and expanding them using expand sub-command is implemented.
+Assume you write various applications and for each new project you add some initial files as the beginning skeleton. Also you replace some strings or expand some templates to add various information to the application, like author or other metadata.
 
-A directory tree can be used as a skeleton for a named stash. Also it can be expanded using the subcommand `expand` by providing the name of the stash.
+This is one the of best fitting scenarios for using _fstash_. You create a stash from the skeleton files and then expand it whenever you are creating a new project. Also it is possible to provide the metadata to be injected into files.
 
-The help for the app:
+As an example take a look at `sample-stash` directory. In this directory there is a Go file named `variables.go`. This file contains some variables that will be filled at compile time by Go compiler and come from `build.sh` file. Also there are two other variables `Author` and `License` which will be filled when we expand this stash for a new project.
 
-```
-usage: fstash [<flags>] <command> [<args> ...]
-
-Flags:
-  -h, --help  Show context-sensitive help (also try --help-long and --help-man).
-
-Commands:
-  help [<command>...]
-    Show help.
-
-  create --stash-name=STASH-NAME [<flags>]
-    creating stash based on the content of a directory
-
-  expand --stash-name=STASH-NAME [<flags>]
-    expand stash and expand it into a directory
-
-  list
-    lists existing file stashes
-```
-
-Also the help for subcommands are provided too. For subcommand `create`:
+First let’s create the stash:
 
 ```
-usage: fstash create --stash-name=STASH-NAME [<flags>]
-
-creating stash based on the content of a directory
-
-Flags:
-  -h, --help                   Show context-sensitive help (also try --help-long and --help-man).
-  -n, --stash-name=STASH-NAME  name of this stash, lower case, only numbers, alphabet and - and _
-  -c, --stash-content="."      the directory that its content will be used to create the stash
-
+$ cd sample-stash/
+$ fstash create -n newproject
 ```
 
-And for sumcommand `expand`:
+Now let’s create a new project which skeleton will be created from that stash:
 
 ```
-usage: fstash expand --stash-name=STASH-NAME [<flags>]
-
-expand stash and expand it into a directory
-
-Flags:
-  -h, --help                   Show context-sensitive help (also try --help-long and --help-man).
-  -n, --stash-name=STASH-NAME  name of this stash, lower case, only numbers, alphabet and - and _
-  -d, --destination="."        the directory that its content will be expanded to
+$ cd ~/Documents/
+$ mkdir newapp
+$ cd newapp/
+$ fstash expand -n newproject variables='{"Author":"Kaveh","License":"MIT"}'
 ```
+
+Last command expands the stash we created in previous step, into current directory. The part `variables='{"Author":"Kaveh","License":"MIT"}'` indicates that `variables.go` is a (Go) text template file and the provided JSON should be passed to it as model data.
+
+Now the content of variables.go is:
+
+```golang
+package main
+
+// build flags
+var (
+        BuildTime  string
+        CommitHash string
+        GoVersion  string
+        GitTag     string
+)
+
+// package info
+const (
+        Author  = "Kaveh"
+        License = "MIT"
+)
+```
+
+Tada! :)
+
+I hope you find this tool useful.
+

@@ -53,7 +53,7 @@ var (
 	expandCommand   = kingpin.Command("expand", "expand stash and expand it into a directory")
 	expandStashName = expandCommand.Flag("stash-name", "name of this stash, lower case, only numbers, alphabet and - and _").Short('n').Required().String()
 	expandDstDir    = expandCommand.Flag("destination", "the directory that its content will be expanded to").Short('d').Default(".").String()
-	expandData      = expandCommand.Arg("data", "json data for template files").StringMap()
+	expandData      = expandCommand.Arg("data", "json data for template files, multiple ones with format filename1=JSON filename2=JSON").StringMap()
 
 	listCommand = kingpin.Command("list", "lists existing file stashes")
 )
