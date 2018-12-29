@@ -1,8 +1,9 @@
 **raw ideas** which might or might not get implemented:
 
-- ❌ generate json config for current directory - indicating list of files and list of template files
 - ✅ stash current directory
-- ✅ pop a stash
+- ✅ expand a stash
+- ❌ ignore _.git_ (or configurable? globally?)
+- ❌ generate json config for current directory - indicating list of files and list of template files
 - ❌ avoid overwriting (alarm and ask) or diff
 - ❌ stash files from different directories
 - ❌ use semver
