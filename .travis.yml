@@ -6,3 +6,13 @@ go:
 before_install:
   - go get -v github.com/stretchr/testify/require
 
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key:
+    secure: $GITHUB_KEY
+  file:
+  - fstahs.linux.amd64
+  on:
+    tags: true
+    condition: $LATEST = true
