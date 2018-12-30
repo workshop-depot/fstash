@@ -6,13 +6,24 @@ go:
 before_install:
   - go get -v github.com/stretchr/testify/require
 
+script:
+- go test -v
+- GOOS=windows GOARCH=amd64 go build -o fstash-windows-amd64.exe
+- GOOS=linux   GOARCH=amd64 go build -o fstash-linux-amd64
+
+before_deploy:
+- zip fstash-${TRAVIS_TAG}-windows-amd64.zip fstash-windows-amd64.exe README.md
+- zip fstash-${TRAVIS_TAG}-linux-amd64.zip fstash-linux-amd64 README.md
+- sha256sum *zip > SHASUMS256.txt
+
 deploy:
   provider: releases
   skip_cleanup: true
   api_key:
     secure: $GITHUB_KEY
   file:
-  - fstahs.linux.amd64
+  - fstash-${TRAVIS_TAG}-windows-amd64.zip
+  - fstash-${TRAVIS_TAG}-linux-amd64.zip
+  - SHASUMS256.txt
   on:
     tags: true
-    condition: $LATEST = true
