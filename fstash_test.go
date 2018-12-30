@@ -492,3 +492,37 @@ func Test_expand_stash_templates(t *testing.T) {
 		require.Equal("Author of Web is Web Developer.", string(content))
 	}
 }
+
+func Test_deleteStash(t *testing.T) {
+	require := require.New(t)
+	homeDir3 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir3))
+	}()
+	homeDir1 := filepath.Join(os.TempDir(), randTemp())
+	defer func() {
+		require.NoError(os.RemoveAll(homeDir1))
+	}()
+
+	// creating sample stash
+	{
+		require.Nil(createSampleTreeWithTemplates(homeDir1))
+
+		stashTree := homeDir1
+		fstashHome := homeDir3
+		stashName := "sample-stash"
+		err := createStash(stashName, stashTree, fstashHome)
+		require.NoError(err)
+	}
+
+	stashName := "sample-stash"
+	fstashHome := homeDir3
+	if err := deleteStash(stashName, fstashHome); err != nil {
+		require.NoError(err)
+	}
+
+	l, err := listDepth(fstashHome, 5)
+	require.NoError(err)
+	require.Len(l, 0)
+	require.Equal("[]", fmt.Sprint(l))
+}

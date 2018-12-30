@@ -230,3 +230,19 @@ func listDepth(dir string, depth int) ([]string, error) {
 	}
 	return result, nil
 }
+
+func deleteStash(stashName, fstashHome string) error {
+	stashName = polishStashName(stashName)
+	parts := []string{fstashHome}
+	parts = append(parts, hashParts(hash(stashName))...)
+	parts = append(parts, stashName)
+	dir := filepath.Join(parts...)
+	_, err := os.Stat(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	return os.RemoveAll(dir)
+}

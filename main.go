@@ -42,6 +42,11 @@ func main() {
 			items = append(items, v)
 		}
 		fmt.Println(items...)
+	case "delete":
+		if err := deleteStash(*deleteStashName, _appHome); err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 }
 
@@ -56,6 +61,9 @@ var (
 	expandData      = expandCommand.Arg("data", "json data for template files, multiple ones with format filename1=JSON filename2=JSON").StringMap()
 
 	listCommand = kingpin.Command("list", "lists existing file stashes")
+
+	deleteCommand   = kingpin.Command("delete", "delete existing file stashe")
+	deleteStashName = deleteCommand.Flag("stash-name", "name of the file stash to delete, lower case, only numbers, alphabet and - and _").Short('n').Required().String()
 )
 
 func init() {
