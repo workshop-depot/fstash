@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/dc0d/fstash)](https://goreportcard.com/report/github.com/dc0d/fstash)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dc0d/fstash)](https://goreportcard.com/report/github.com/dc0d/fstash) [![Build Status](https://travis-ci.com/dc0d/fstash.svg?branch=master)](https://travis-ci.com/dc0d/fstash)
 
 # fstash
 stash a file or a tree of files for later reuse - a bit like `git stash`
