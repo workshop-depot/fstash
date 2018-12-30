@@ -1,0 +1,8 @@
+language: go
+
+go:
+  - "1.11.2"
+
+before_install:
+  - go get -v github.com/stretchr/testify/require
+
