@@ -14,10 +14,15 @@ import (
 	"text/template"
 )
 
-func readTree(dir string) (map[string][]string, error) {
+func readTree(dir string, dirToSkip ...string) (map[string][]string, error) {
 	_, err := os.Stat(dir)
 	if err != nil {
 		return nil, err
+	}
+	skipper := make(map[string]*bool)
+	for _, v := range dirToSkip {
+		flag := true
+		skipper[v] = &flag
 	}
 	tree := make(map[string][]string)
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -29,6 +34,8 @@ func readTree(dir string) (map[string][]string, error) {
 		if !info.IsDir() {
 			d = filepath.Dir(r)
 			r = info.Name()
+		} else if nil != skipper[info.Name()] {
+			return filepath.SkipDir
 		}
 		if d == r {
 			return nil
@@ -110,7 +117,7 @@ func createStash(stashName, stashTree, fstashHome string) error {
 	if !validateName(stashName) {
 		return errInvalidStashName
 	}
-	tree, err := readTree(stashTree)
+	tree, err := readTree(stashTree, ".git")
 	if err != nil {
 		return err
 	}

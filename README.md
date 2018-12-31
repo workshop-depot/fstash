@@ -3,6 +3,8 @@
 # fstash
 Stash a file or a tree of files for later reuse - a bit like `git stash`. Prebuilt [binaries](https://github.com/dc0d/fstash/releases) are available for Linux, Windows and Darwin. Just extract it somewhere inside your `$PATH`.
 
+It skips `.git` directory.
+
 # test
 
 Use this command:
