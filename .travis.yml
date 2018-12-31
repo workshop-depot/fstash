@@ -10,10 +10,12 @@ script:
 - go test -v
 - GOOS=windows GOARCH=amd64 go build -o fstash-windows-amd64.exe
 - GOOS=linux   GOARCH=amd64 go build -o fstash-linux-amd64
+- GOOS=darwin  GOARCH=amd64 go build -o fstash-darwin-amd64
 
 before_deploy:
 - zip fstash-${TRAVIS_TAG}-windows-amd64.zip fstash-windows-amd64.exe README.md
 - zip fstash-${TRAVIS_TAG}-linux-amd64.zip fstash-linux-amd64 README.md
+- zip fstash-${TRAVIS_TAG}-darwin-amd64.zip fstash-darwin-amd64.exe README.md
 - sha256sum *zip > SHASUMS256.txt
 
 deploy:
@@ -24,6 +26,7 @@ deploy:
   file:
   - fstash-${TRAVIS_TAG}-windows-amd64.zip
   - fstash-${TRAVIS_TAG}-linux-amd64.zip
+  - fstash-${TRAVIS_TAG}-darwin-amd64.zip
   - SHASUMS256.txt
   on:
     tags: true
