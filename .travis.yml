@@ -15,7 +15,7 @@ script:
 before_deploy:
 - zip fstash-${TRAVIS_TAG}-windows-amd64.zip fstash-windows-amd64.exe README.md
 - zip fstash-${TRAVIS_TAG}-linux-amd64.zip fstash-linux-amd64 README.md
-- zip fstash-${TRAVIS_TAG}-darwin-amd64.zip fstash-darwin-amd64.exe README.md
+- zip fstash-${TRAVIS_TAG}-darwin-amd64.zip fstash-darwin-amd64 README.md
 - sha256sum *zip > SHASUMS256.txt
 
 deploy:
